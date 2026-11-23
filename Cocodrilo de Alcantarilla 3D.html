@@ -78,7 +78,7 @@ function makeVortex(){const v=new THREE.Group();const f=new THREE.Mesh(new THREE
   for(let a=0;a<3;a++){const g=a*2.09+i;B(.5,.1,.25,0xffffff,Math.cos(g)*r,.05,Math.sin(g)*r,p)}v.add(p)}return v}
 // ---- estado
 const TL=140;
-let st='tube',last='tube',t=0,yaw=0,px=0,pz=0,py=0,hp=100,eaten=0,base=0,scared=0,lvl=1,dif=1,fadeA=1,fadeD=-1,nxt=null,sub='',dead=false,mov=false,bt=0,bcd=0,msgT=0,eyes=false,unl=false,spt=0,wt=0,dt2=0,dp=0,db=0,bhp=120,bbt=1,lunge=0,said=false;
+let st='tube',last='tube',t=0,yaw=0,px=0,pz=0,py=0,hp=100,eaten=0,base=0,scared=0,lvl=1,dif=1,fadeA=1,fadeD=-1,nxt=null,sub='',dead=false,mov=false,bt=0,bcd=0,msgT=0,eyes=false,topCam=false,camMode=0,unl=false,spt=0,wt=0,dt2=0,dp=0,db=0,bhp=120,bbt=1,lunge=0,said=false;
 let L=null,gate=null,boss=null,water=null,vort=null;const rats=[],npcs=[];
 function say(s,d){$('msg').textContent=s;msgT=d}
 function go(s){if(nxt)return;nxt=s;fadeD=1}
@@ -122,7 +122,7 @@ function build(s){
  }
 }
 // ---- controles
-const K={};addEventListener('keydown',e=>{K[e.code]=1;if(e.code=='Space')bite();if(e.code=='KeyC')eyes=!eyes;if(e.code=='KeyX')tailAttack();if(e.code=='KeyZ')stomp();if(e.code=='KeyV')deathRoll();if(e.code=='KeyH')headButt()});addEventListener('keyup',e=>K[e.code]=0);
+const K={};addEventListener('keydown',e=>{K[e.code]=1;if(e.code=='Space')bite();if(e.code=='KeyC'){camMode=(camMode+1)%3;eyes=camMode===1;topCam=camMode===2;}if(e.code=='KeyX')tailAttack();if(e.code=='KeyZ')stomp();if(e.code=='KeyV')deathRoll();if(e.code=='KeyH')headButt()});addEventListener('keyup',e=>K[e.code]=0);
 document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 let jx=0,jy=0,sid=null,attackAnim=0,attackKind='',attackCD=0,trapTriggered=false;const stick=$('stick'),knob=$('knob');
 function js(e){const r=stick.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/(r.width/2),dy=(e.clientY-r.top-r.height/2)/(r.height/2);const m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m}jx=dx;jy=dy;knob.style.transform='translate('+dx*35+'px,'+dy*35+'px)'}
@@ -130,7 +130,7 @@ stick.addEventListener('pointerdown',e=>{sid=e.pointerId;stick.setPointerCapture
 stick.addEventListener('pointermove',e=>{if(e.pointerId==sid)js(e)});
 const ju=e=>{if(e.pointerId==sid){sid=null;jx=jy=0;knob.style.transform=''}};stick.addEventListener('pointerup',ju);stick.addEventListener('pointercancel',ju);
 $('bite').addEventListener('pointerdown',e=>{e.preventDefault();bite()});$('tailBtn').addEventListener('pointerdown',e=>{e.preventDefault();tailAttack()});$('stompBtn').addEventListener('pointerdown',e=>{e.preventDefault();stomp()});$('rollBtn').addEventListener('pointerdown',e=>{e.preventDefault();deathRoll()});$('headBtn').addEventListener('pointerdown',e=>{e.preventDefault();headButt()});
-$('eye').addEventListener('click',()=>eyes=!eyes);$('retry').addEventListener('click',()=>build(last));
+$('eye').addEventListener('click',()=>{camMode=(camMode+1)%3;eyes=camMode===1;topCam=camMode===2});$('retry').addEventListener('click',()=>build(last));
 function move(dt,sp){let tr=((K.KeyA||K.ArrowLeft)?1:0)-((K.KeyD||K.ArrowRight)?1:0)-jx,mv=((K.KeyW||K.ArrowUp)?1:0)-((K.KeyS||K.ArrowDown)?.5:0)-jy;
  tr=cl(tr,-1,1);mv=cl(mv,-.5,1);yaw+=tr*2.4*dt;mov=Math.abs(mv)>.1;px+=-Math.sin(yaw)*mv*sp*dt;pz+=-Math.cos(yaw)*mv*sp*dt}
 function attackHit(radius,damage,kind){if(dead||st=='cut'||attackCD>0)return;attackCD=.65;attackAnim=.55;attackKind=kind;const fx=-Math.sin(yaw),fz=-Math.cos(yaw);function inArc(x,z,r){const dx=x-px,dz=z-pz,d=Math.hypot(dx,dz);if(d>r)return false;if(kind==='tail')return d<.01||((-dx*fx-dz*fz)/d)>.15;if(kind==='head')return d<.01||((dx*fx+dz*fz)/d)>.15;return true}for(let i=rats.length-1;i>=0;i--){const a=rats[i];if(inArc(a.g.position.x,a.g.position.z,radius)){L.remove(a.g);rats.splice(i,1);eaten++}}for(const n of npcs)if(inArc(n.g.position.x,n.g.position.z,radius*.75))n.fl=4;if(sub==='duel'||sub==='giantDuel'){bhp-=damage;dp+=damage}}function tailAttack(){attackHit(4.5,14,'tail')}function stomp(){attackHit(3.1,9,'stomp')}function deathRoll(){attackHit(5.2,24,'roll')}function headButt(){attackHit(3.4,12,'head')}
@@ -215,7 +215,7 @@ function tick(dt){
  const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let tx,ty,tz,lx,ly,lz,snap=false;
  if(st=='cut'){if(t<3.8){tx=px+3.6;ty=py+2;tz=pz-6;lx=px;ly=py+1.4;lz=pz}else{tx=px;ty=py+5;tz=pz+9;lx=px;ly=py;lz=pz}}
  else if(sub=='duel'){tx=5.5;ty=3.2;tz=8;lx=0;ly=1.8;lz=-2.5}
- else if(eyes){snap=true;tx=px+fx*1.35;ty=1.55;tz=pz+fz*1.35;lx=px+fx*7;ly=.95;lz=pz+fz*7}
+ else if(topCam){tx=px;ty=10;tz=pz+1;lx=px;ly=0;lz=pz-3}\n else if(eyes){snap=true;tx=px+fx*1.35;ty=1.55;tz=pz+fz*1.35;lx=px+fx*7;ly=.95;lz=pz+fz*7}
  else{tx=px-fx*6.5;ty=py+3;tz=pz-fz*6.5;lx=px;ly=py+1.2;lz=pz}
  const kk=snap?1:Math.min(1,dt*6);C.position.x+=(tx-C.position.x)*kk;C.position.y+=(ty-C.position.y)*kk;C.position.z+=(tz-C.position.z)*kk;C.lookAt(lx,ly,lz);
  // hud
