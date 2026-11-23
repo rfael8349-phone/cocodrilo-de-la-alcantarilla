@@ -215,7 +215,8 @@ function tick(dt){
  const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let tx,ty,tz,lx,ly,lz,snap=false;
  if(st=='cut'){if(t<3.8){tx=px+3.6;ty=py+2;tz=pz-6;lx=px;ly=py+1.4;lz=pz}else{tx=px;ty=py+5;tz=pz+9;lx=px;ly=py;lz=pz}}
  else if(sub=='duel'){tx=5.5;ty=3.2;tz=8;lx=0;ly=1.8;lz=-2.5}
- else if(topCam){tx=px;ty=10;tz=pz+1;lx=px;ly=0;lz=pz-3}\n else if(eyes){snap=true;tx=px+fx*1.35;ty=1.55;tz=pz+fz*1.35;lx=px+fx*7;ly=.95;lz=pz+fz*7}
+ else if(topCam){tx=px;ty=10;tz=pz+1;lx=px;ly=0;lz=pz-3}
+ else if(eyes){snap=true;tx=px+fx*1.35;ty=1.55;tz=pz+fz*1.35;lx=px+fx*7;ly=.95;lz=pz+fz*7}
  else{tx=px-fx*6.5;ty=py+3;tz=pz-fz*6.5;lx=px;ly=py+1.2;lz=pz}
  const kk=snap?1:Math.min(1,dt*6);C.position.x+=(tx-C.position.x)*kk;C.position.y+=(ty-C.position.y)*kk;C.position.z+=(tz-C.position.z)*kk;C.lookAt(lx,ly,lz);
  // hud
