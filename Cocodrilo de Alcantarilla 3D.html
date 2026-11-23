@@ -153,6 +153,7 @@ function startGiantHorde(){
  say('¡El Rey Rata cae... pero aparece la RATOTA GIGANTE!',4);
 }
 function startGiantDuel(){
+ for(const a of rats)L.remove(a.g);rats.length=0;
  sub='giantDuel';dt2=0;dp=0;db=0;bhp=240;hp=100;bbt=.32;lunge=0;
  px=0;pz=3;yaw=0;say('¡JEFE FINAL: RATOTA GIGANTE! ¡Muerde para vencer!',3);
 }
