@@ -132,7 +132,8 @@ $('bite').addEventListener('pointerdown',e=>{e.preventDefault();bite()});$('tail
 $('eye').addEventListener('click',()=>eyes=!eyes);$('retry').addEventListener('click',()=>build(last));
 function move(dt,sp){let tr=((K.KeyA||K.ArrowLeft)?1:0)-((K.KeyD||K.ArrowRight)?1:0)-jx,mv=((K.KeyW||K.ArrowUp)?1:0)-((K.KeyS||K.ArrowDown)?.5:0)-jy;
  tr=cl(tr,-1,1);mv=cl(mv,-.5,1);yaw+=tr*2.4*dt;mov=Math.abs(mv)>.1;px+=-Math.sin(yaw)*mv*sp*dt;pz+=-Math.cos(yaw)*mv*sp*dt}
-function attackHit(radius,damage,kind){if(dead||st=='cut'||attackCD>0)return;attackCD=.65;attackAnim=.55;attackKind=kind;for(let i=rats.length-1;i>=0;i--){const a=rats[i];if(Math.hypot(a.g.position.x-px,a.g.position.z-pz)<radius){L.remove(a.g);rats.splice(i,1);eaten++}}for(const n of npcs)if(Math.hypot(n.g.position.x-px,n.g.position.z-pz)<radius*.75)n.fl=4;if(sub==='duel'||sub==='giantDuel'){bhp-=damage;dp+=damage}}function tailAttack(){attackHit(4.5,14,'tail')}function stomp(){attackHit(3.1,9,'stomp')}function deathRoll(){attackHit(5.2,24,'roll')}function headButt(){attackHit(3.4,12,'head')}\nfunction bite(){
+function attackHit(radius,damage,kind){if(dead||st=='cut'||attackCD>0)return;attackCD=.65;attackAnim=.55;attackKind=kind;for(let i=rats.length-1;i>=0;i--){const a=rats[i];if(Math.hypot(a.g.position.x-px,a.g.position.z-pz)<radius){L.remove(a.g);rats.splice(i,1);eaten++}}for(const n of npcs)if(Math.hypot(n.g.position.x-px,n.g.position.z-pz)<radius*.75)n.fl=4;if(sub==='duel'||sub==='giantDuel'){bhp-=damage;dp+=damage}}function tailAttack(){attackHit(4.5,14,'tail')}function stomp(){attackHit(3.1,9,'stomp')}function deathRoll(){attackHit(5.2,24,'roll')}function headButt(){attackHit(3.4,12,'head')}
+function bite(){
  if(dead||st=='cut'||bcd>0)return;bcd=sub=='duel'?.1:.35;bt=.25;
  if(sub=='duel'||sub=='giantDuel'){const d=(sub=='giantDuel'?5:4)+Math.random()*(sub=='giantDuel'?6:5);dp+=d;bhp-=d;return}
  const fx=-Math.sin(yaw),fz=-Math.cos(yaw);
