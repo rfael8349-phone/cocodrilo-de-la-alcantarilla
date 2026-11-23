@@ -50,8 +50,24 @@ for(let i=0;i<4;i++)for(const s of[-1,1])B(.07,.16,.07,0xffffff,s*.42,.69,-2.1-i
 for(const s of[-1,1]){Sp(.18,0xf2d933,s*.4,1.2,-1.85,croc,0x443300);Sp(.08,0,s*.4,1.24,-1.98,croc)}
 for(let i=0;i<9;i++)B(.22,.2,.32,0x1f470f,0,1.25,-1.3+i*.42,croc);
 const legs=[];for(let i=0;i<4;i++){const g=new THREE.Group();g.position.set(i%2?-.88:.88,.6,i<2?-1.1:1.5);croc.add(g);B(.38,.62,.45,0x1f470f,0,-.3,0,g);legs.push(g)}
-const arm=legs[0];Sp(.24,0x388a2e,0,-.62,0,arm);
-const thumb=B(.14,.34,.14,0x388a2e,1.69,1.7,-1.1,croc);thumb.visible=false;
+// Manos con palma, cuatro dedos y pulgar articulado unido al lateral.
+const handGroups=[];
+function makeHand(parent,side){
+ const h=new THREE.Group();h.position.set(0,-.56,-.03);parent.add(h);
+ B(.46,.14,.38,0x388a2e,0,0,0,h);
+ for(let i=0;i<4;i++){const x=(i-1.5)*.105;B(.085,.085,.23,0x388a2e,x,-.005,-.255,h);Sp(.052,0x4c9b3b,x,-.005,-.36,h)}
+ const th=new THREE.Group();th.position.set(side*.205,.025,-.07);h.add(th);
+ const s1=B(.105,.105,.19,0x388a2e,side*.055,.025,-.055,th);s1.rotation.z=-side*.62;
+ Sp(.06,0x4c9b3b,side*.105,.04,-.11,th);
+ const s2=B(.09,.09,.16,0x388a2e,side*.15,.105,-.13,th);s2.rotation.z=-side*.72;
+ Sp(.055,0x4c9b3b,side*.19,.16,-.17,th);
+ handGroups.push({hand:h,thumb:th,side});
+}
+makeHand(legs[0],1);makeHand(legs[1],-1);
+// Escudos dorsales y fosas nasales para reforzar la silueta de cocodrilo.
+for(let i=0;i<11;i++){const plate=new THREE.Mesh(new THREE.ConeGeometry(.16,.28,5),M(0x245d20));plate.position.set(0,1.22,-1.25+i*.28);croc.add(plate)}
+for(const s of[-1,1]){Sp(.055,0x15210f,s*.23,1.16,-3.78,croc);Sp(.035,0xb9d77a,s*.55,.66,-3.45,croc)}
+const arm=legs[0];
 // ---- ratas / vortex
 function mkRat(sc,col){const g=new THREE.Group(),p=0xe699a6;const b=Sp(.5,col,0,.4,.1,g);b.scale.set(.7,.6,1.1);const h=Sp(.3,col,0,.45,-.55,g);h.scale.set(.8,.8,1.1);Sp(.09,p,0,.42,-.9,g);
  for(const s of[-1,1]){const e=Sp(.15,p,s*.2,.72,-.45,g);e.scale.z=.3;Sp(.05,0xff1a1a,s*.13,.55,-.78,g,0xff0000)}
@@ -75,7 +91,7 @@ function addNpc(k){const g=new THREE.Group();
 function build(s){
  if(L)S.remove(L);L=new THREE.Group();S.add(L);rats.length=0;npcs.length=0;
  st=s;last=s;t=0;sub='';hp=100;px=0;pz=0;py=0;yaw=0;dead=false;vort=null;boss=null;said=false;S.fog=null;
- croc.scale.setScalar(1);arm.rotation.z=0;arm.scale.setScalar(1);thumb.visible=false;dif=1+.25*(lvl-1);
+ croc.scale.setScalar(1);arm.rotation.z=0;arm.scale.setScalar(1);handGroups.forEach(h=>h.thumb.rotation.z=0);dif=1+.25*(lvl-1);
  if(s=='tube'){
   S.background=new THREE.Color(0x8cc7f2);S.fog=new THREE.Fog(0x1a2a20,20,120);amb.intensity=.5;sun.intensity=.7;
   const tb=new THREE.Mesh(new THREE.CylinderGeometry(4.2,4.2,TL,20,1,true),new THREE.MeshLambertMaterial({color:0x55584c,side:THREE.DoubleSide}));tb.rotation.x=Math.PI/2;tb.position.set(0,2,-TL/2);L.add(tb);
@@ -97,7 +113,11 @@ function build(s){
   S.background=new THREE.Color(0x14200f);S.fog=new THREE.Fog(0x1a4010,15,70);amb.intensity=.7;sun.intensity=.2;
   const d=new THREE.Mesh(new THREE.CylinderGeometry(22,22,.6,32),M(0x4d4740));d.position.y=-.3;L.add(d);
   water=B(300,.2,300,0x40d933,0,-.7,0,L,0x40d933);const pl=new THREE.PointLight(0x66ff4d,2,60);pl.position.set(0,6,0);L.add(pl);
-  boss=mkRat(4.5,0x4d4752);boss.position.set(0,0,-16);boss.rotation.y=Math.PI;L.add(boss);pz=14;sub='horde';wt=1;say('¡El Ratón Jefe manda a sus ratas!',3);
+  boss=mkRat(2.7,0x4d4752);boss.position.set(0,0,-16);boss.rotation.y=Math.PI;L.add(boss);
+  const crown=new THREE.Group();boss.add(crown);
+  const crownBase=new THREE.Mesh(new THREE.CylinderGeometry(.34,.42,.16,8),M(0xe6bf1a));crownBase.position.set(0,.82,-.58);crown.add(crownBase);
+  for(let i=0;i<5;i++){const spike=new THREE.Mesh(new THREE.ConeGeometry(.11,.38,5),M(0xffd84a));spike.position.set(-.28+i*.14,1.08,-.58);crown.add(spike)}
+  pz=14;sub='horde';wt=1;say('¡El REY RATA! ¡Primero tendrás que derrotarlo!',3);
  }
 }
 // ---- controles
@@ -114,7 +134,7 @@ function move(dt,sp){let tr=((K.KeyA||K.ArrowLeft)?1:0)-((K.KeyD||K.ArrowRight)?
  tr=cl(tr,-1,1);mv=cl(mv,-.5,1);yaw+=tr*2.4*dt;mov=Math.abs(mv)>.1;px+=-Math.sin(yaw)*mv*sp*dt;pz+=-Math.cos(yaw)*mv*sp*dt}
 function bite(){
  if(dead||st=='cut'||bcd>0)return;bcd=sub=='duel'?.1:.35;bt=.25;
- if(sub=='duel'){const d=3+Math.random()*5;dp+=d;bhp-=d;return}
+ if(sub=='duel'||sub=='giantDuel'){const d=(sub=='giantDuel'?5:4)+Math.random()*(sub=='giantDuel'?6:5);dp+=d;bhp-=d;return}
  const fx=-Math.sin(yaw),fz=-Math.cos(yaw);
  for(const a of[...rats,...npcs]){const dx=a.g.position.x-px,dz=a.g.position.z-pz,d=Math.hypot(dx,dz);if(d<.01||d>4.4||(dx*fx+dz*fz)/d<.35)continue;
   if(a.k=='rat'){L.remove(a.g);rats.splice(rats.indexOf(a),1);eaten++;say('¡ÑAM!',.6)}else if(!a.fl){a.fl=3.5;scared++;say('¡Huyen!',.6)}}}
@@ -126,7 +146,17 @@ function npcUpd(dt){for(const n of npcs){const g=n.g,dx=g.position.x-px,dz=g.pos
  else{const tx=n.tx-g.position.x,tz=n.tz-g.position.z,td=Math.hypot(tx,tz);if(td<1){n.tx=rnd(-17,17);n.tz=rnd(-33,44)}else{vx=tx/td;vz=tz/td}}
  g.position.x=cl(g.position.x+vx*sp*dt,-18,18);g.position.z=cl(g.position.z+vz*sp*dt,-34,46);g.position.y=Math.abs(Math.sin(t*8))*.08;if(vx||vz)g.rotation.y=Math.atan2(-vx,-vz)}}
 function circ(r){const h=Math.hypot(px,pz);if(h>r){px*=r/h;pz*=r/h}}
-function duel(){for(const a of rats)L.remove(a.g);rats.length=0;sub='duel';dt2=0;dp=0;db=0;hp=100;bhp=120;bbt=1;lunge=0;px=0;pz=2;yaw=0;boss.position.set(0,0,-7);boss.scale.setScalar(4.5);say('¡DUELO DE MORDIDAS! ¡Toca MORDER sin parar!',3)}
+function duel(){for(const a of rats)L.remove(a.g);rats.length=0;sub='duel';dt2=0;dp=0;db=0;hp=100;bhp=120;bbt=1;lunge=0;px=0;pz=2;yaw=0;boss.position.set(0,0,-7);boss.scale.setScalar(2.7);say('¡PRE-JEFE: REY RATA! ¡DUELO DE MORDIDAS!',3)}
+function startGiantHorde(){
+ sub='giantHorde';t=0;wt=.8;dt2=0;dp=0;db=0;bhp=240;hp=100;bbt=.8;
+ boss.scale.setScalar(7.2);boss.position.set(0,0,-12);boss.visible=true;
+ say('¡El Rey Rata cae... pero aparece la RATOTA GIGANTE!',4);
+}
+function startGiantDuel(){
+ for(const a of rats)L.remove(a.g);rats.length=0;
+ sub='giantDuel';dt2=0;dp=0;db=0;bhp=240;hp=100;bbt=.32;lunge=0;
+ px=0;pz=3;yaw=0;say('¡JEFE FINAL: RATOTA GIGANTE! ¡Muerde para vencer!',3);
+}
 function win(){sub='clean';t=0;say('¡Ganaste el duelo!',2.5)}
 const c1=new THREE.Color(0x40d933),c2=new THREE.Color(0x2673cc),b1=new THREE.Color(0x14200f),b2=new THREE.Color(0x8cc7f2),tmp=new THREE.Color();
 // ---- bucle
@@ -137,7 +167,7 @@ function tick(dt){
  else if(st=='tube'){move(dt,6.5);const lim=pz>-TL?2.6:12;px=cl(px,-lim,lim);pz=cl(pz,-TL-12,4);ratsUpd(dt,22);if(pz<-TL-10){st='cut';t=0;rats.length=0}}
  else if(st=='cut'){
   yaw=Math.atan2(Math.sin(yaw),Math.cos(yaw));if(t<9)yaw+=(0-yaw)*Math.min(1,dt*4);
-  const k=sm(.3,1.3,t)*(1-sm(3.8,4.6,t));arm.rotation.z=2.18*k;arm.scale.setScalar(1+.6*k);thumb.visible=k>.85;
+  const k=sm(.3,1.3,t)*(1-sm(3.8,4.6,t));arm.rotation.z=2.18*k;arm.scale.setScalar(1+.6*k);handGroups.forEach(h=>h.thumb.rotation.z=-h.side*.95*k);
   if(t>4&&t<=9){pz-=2.6*dt;py=-.35+Math.sin(t*3)*.06;mov=true}
   if(t>7&&!vort){vort=makeVortex();vort.position.set(px,-.1,pz-9);L.add(vort)}
   if(vort){vort.scale.setScalar(.1+.9*cl((t-7)/1.5,0,1));vort.children.forEach((c,i)=>c.rotation.y+=dt*(2+i))}
@@ -150,14 +180,25 @@ function tick(dt){
   if(!unl&&eaten-base>=8){unl=true;L.remove(gate);say('¡Ya puedes ir al arroyo contaminado!',3.5)}
   if(unl&&pz<-47.5)go('boss')}
  else if(st=='boss'){
-  if(sub=='horde'){move(dt,6.5);circ(20);boss.scale.setScalar(4.5*(1+.02*Math.sin(t*3)));wt-=dt;
-   if(wt<=0){wt=Math.max(.9,1.7-.1*lvl);for(let i=0;i<3;i++)addRat(boss.position.x+rnd(-4,4),boss.position.z+rnd(4,7),1)}
-   ratsUpd(dt,999);if(t>24)duel()}
+  if(sub=='horde'){move(dt,6.5);circ(20);boss.scale.setScalar(2.7*(1+.025*Math.sin(t*3)));wt-=dt;
+   if(wt<=0){wt=Math.max(.8,1.45-.08*lvl);for(let i=0;i<3;i++)addRat(boss.position.x+rnd(-4,4),boss.position.z+rnd(4,7),1)}
+   ratsUpd(dt,999);if(t>18)duel()}
   else if(sub=='duel'){
    dt2+=dt;bbt-=dt;lunge=Math.max(0,lunge-dt*4);
-   if(bbt<=0){bbt=.38;const d=(3+Math.random()*5)*dif;db+=d;hp-=d;lunge=1}
+   if(bbt<=0){bbt=.42;const d=(2.5+Math.random()*4)*dif;db+=d;hp-=d;lunge=1}
    boss.position.z+=(-7+lunge*.9-boss.position.z)*Math.min(1,dt*18);
-   if(bhp<=0)win();else if(hp<=0)dead=true;else if(dt2>=15){if(dp>db)win();else dead=true}}
+   if(bhp<=0)startGiantHorde();else if(hp<=0)dead=true;else if(dt2>=16){if(dp>db)startGiantHorde();else dead=true}}
+  else if(sub=='giantHorde'){
+   move(dt,6);circ(20);boss.scale.setScalar(7.2*(1+.04*Math.sin(t*4)));wt-=dt;
+   if(wt<=0){wt=1.1;for(let i=0;i<4;i++)addRat(rnd(-8,8),boss.position.z+rnd(4,9),1)}
+   ratsUpd(dt,999);if(t>12)startGiantDuel()
+  }
+  else if(sub=='giantDuel'){
+   dt2+=dt;bbt-=dt;lunge=Math.max(0,lunge-dt*3.5);
+   if(bbt<=0){bbt=.3;const d=(6+Math.random()*6)*dif;db+=d;hp-=d;lunge=1}
+   boss.position.z+=(-9+lunge*1.6-boss.position.z)*Math.min(1,dt*16);
+   if(bhp<=0)win();else if(hp<=0)dead=true;else if(dt2>=18){if(dp>db)win();else dead=true}
+  }
   else if(sub=='clean'){
    move(dt,6.5);circ(20);const k=cl(t/5,0,1);
    water.material.color.copy(c1).lerp(c2,k);water.material.emissive.copy(c1).lerp(c2,k).multiplyScalar(.5);
@@ -183,7 +224,8 @@ function tick(dt){
  else if(st=='cut')o=t<3.8?'¡Pulgar arriba!':t<8?'A nadar por el arroyo...':'¡Una tromba!';
  else if(st=='city')o+=' · Ahuyentados: '+scared+' · '+(unl?'Ve al arroyo contaminado':'Come '+(eaten-base)+'/8')
  else if(sub=='horde')o+=' · ¡Sobrevive a la horda! '+Math.max(0,Math.ceil(24-t));
- else if(sub=='duel')o='Tu daño '+Math.round(dp)+' · Ratón '+Math.round(db)+' · Ratón vida '+Math.max(0,Math.round(bhp))+' · '+Math.max(0,Math.ceil(15-dt2))+'s';
+ else if(sub=='duel'||sub=='giantDuel')o=(sub=='duel'?'Rey Rata':'Ratota gigante')+' · Tú '+Math.round(dp)+' · Enemigo '+Math.round(db)+' · Vida jefe '+Math.max(0,Math.round(bhp));
+ else if(sub=='giantHorde')o+=' · ¡La Ratota Gigante te persigue!';
  $('info').textContent=o}
 build('tube');
 let lt=performance.now();(function loop(n){const dt=Math.min(.05,(n-lt)/1000);lt=n;tick(dt);R.render(S,C);requestAnimationFrame(loop)})(lt);
