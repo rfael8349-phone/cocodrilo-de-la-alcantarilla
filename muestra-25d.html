@@ -37,44 +37,82 @@ function drawBackground(){rect(0,0,W,H,'#111b19');let grad=ctx.createLinearGradi
 ctx.fillStyle='#647064';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,118);ctx.quadraticCurveTo(240,-55,480,118);ctx.lineTo(480,0);ctx.closePath();ctx.fill();
 ctx.strokeStyle='#929a80';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(0,116);ctx.quadraticCurveTo(240,-52,480,116);ctx.stroke();
 for(let i=0;i<9;i++){let x=i*62-15;rect(x,45+(i%3)*8,24,5,'#84907a');rect(x+5,52+(i%3)*8,3,2,'#bac19a')}
+for(let i=0;i<4;i++){let glow=.5+.5*Math.sin(elapsed*2+i);rect(35+i*137,112+(i%2)*18,4,3,glow>.5?'#9aa77a':'#596c59')}
 rect(0,176,W,144,'#344139');poly([[0,188],[480,188],[480,320],[0,320]],'#36463b');
-for(let z=0;z<7;z++){let y=195+z*20;line(0,y,480,y+rand(-2,2),'#53614c',1);for(let x=0;x<480;x+=38){rect(x+((z%2)*17),y+4,2,2,'#829071')}}
+for(let z=0;z<7;z++){let y=195+z*20;line(0,y,480,y+((z%2)*2-1),'#53614c',1);for(let x=0;x<480;x+=38){rect(x+((z%2)*17),y+4,2,2,'#829071')}}
 // flowing water central ribbon
 poly([[0,222],[95,205],[190,220],[290,202],[390,218],[480,207],[480,285],[390,294],[285,277],[180,296],[90,280],[0,291]],'#245a60');
-for(let i=0;i<24;i++){let x=(i*53+elapsed*35)%500,y=225+(i*17)%62;line(x,y,x+rand(8,22),y-2,'#75b8a0',1)}
+for(let i=0;i<30;i++){let x=(i*53+elapsed*(28+(i%4)*9))%500,y=225+(i*17)%62;let len=8+(i%5)*3;line(x,y,x+len,y-2,'#75b8a0',1);if(i%4===0)rect(x,y+3,2,2,'#a0d1a6')}
+// gotas que caen desde las juntas del túnel
+for(let i=0;i<5;i++){let x=42+i*97,y=(elapsed*34+i*49)%178;rect(x,y,2,4,'#8fc2a4');if(y>160)line(x-3,166,x+4,166,'#83bca1',1)}
 // pipes and grate details
 rect(0,155,480,9,'#202b27');rect(0,160,480,3,'#7b8371');for(let x=18;x<480;x+=62){rect(x,145,5,26,'#6d7567');rect(x+6,147,2,23,'#202820')}
 }
-function drawCroc(x,y,scale){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);let bob=Math.sin(player.walk)*1.3,attack=player.at>0?player.at:0;
-if(player.attack==='roll'&&attack>0)ctx.rotate(Math.sin(elapsed*35)*.25);
-rect(-29,14,58,7,'#17251c'); // shadow
-// tail articulated segments
-let tailSwing=Math.sin(elapsed*7)*4+(player.attack==='tail'&&attack>0?Math.sin(attack*35)*13:0);
-poly([[-25,0],[-43+tailSwing,-7],[-61+tailSwing,-3],[-68+tailSwing,4],[-49+tailSwing,5],[-27,8]],'#387c37');line(-43+tailSwing,-3,-60+tailSwing,1,'#82b64a',2);
-poly([[-28,-8],[19,-9],[30,0],[18,12],[-24,10],[-34,1]],'#3d8c3e');poly([[-24,5],[18,5],[25,10],[14,14],[-23,12]],'#b9c978');
+function drawCroc(x,y,scale){
+ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+const moving=Math.hypot(joy.x,joy.y)>0.12||keys.ArrowRight||keys.ArrowLeft||keys.ArrowUp||keys.ArrowDown||keys.KeyA||keys.KeyD||keys.KeyW||keys.KeyS;
+const stride=moving?Math.sin(player.walk*1.5):Math.sin(elapsed*2)*.35;
+const bob=moving?Math.abs(Math.sin(player.walk*1.5))*2:Math.sin(elapsed*2)*.7;
+const active=player.at>0, progress=active?1-player.at/(player.attack==='roll'?.62:.38):0;
+if(player.attack==='roll'&&active)ctx.rotate(Math.sin(progress*Math.PI*2)*.42);
+rect(-31,14+bob,64,7,'#17251c');
+let tailSwing=Math.sin(elapsed*4)*3;
+if(player.attack==='tail'&&active)tailSwing+=Math.sin(progress*Math.PI)*24;
+poly([[-25,0],[-43+tailSwing,-7],[-61+tailSwing,-3],[-70+tailSwing,4],[-49+tailSwing,6],[-27,8]],'#387c37');
+line(-43+tailSwing,-3,-61+tailSwing,1,'#82b64a',2);
+poly([[-28,-8],[19,-9],[30,0],[18,12],[-24,10],[-34,1]],'#3d8c3e');
+poly([[-24,5],[18,5],[25,10],[14,14],[-23,12]],'#b9c978');
 for(let i=0;i<9;i++){let sx=-20+i*5;poly([[sx,-8],[sx+3,-13],[sx+6,-8]],'#245b2c')}
 for(let i=0;i<5;i++){let sx=-18+i*8;rect(sx,-3,3,2,'#80b94b');rect(sx,7,4,2,'#7eaa4a')}
-let legSwing=Math.sin(player.walk)*4;for(let s of[-1,1]){poly([[s*15,5],[s*23,7+legSwing],[s*28,13+legSwing],[s*17,12],[s*12,9]],'#316e32');for(let k=0;k<3;k++)rect(s*25+(k-1)*3,12+legSwing,2,2,'#c3ce83')}
-// neck and head
-poly([[12,-5],[28,-10],[40,-9],[44,-3],[32,2],[17,4]],'#4a9b43');poly([[23,-11],[42,-16],[60,-12],[69,-7],[66,0],[47,1],[32,-2]],'#4a9b43');
+for(let side of [-1,1]){
+const swing=stride*5*side;
+poly([[side*14,5],[side*22,8+swing],[side*26,14+swing],[side*16,13],[side*11,9]],'#316e32');
+for(let k=0;k<3;k++)rect(side*24+(k-1)*3,13+swing,2,2,'#c3ce83');
+}
+poly([[12,-5],[28,-10],[40,-9],[44,-3],[32,2],[17,4]],'#4a9b43');
+poly([[23,-11],[42,-16],[60,-12],[69,-7],[66,-1],[47,1],[32,-2]],'#4a9b43');
 poly([[31,-2],[66,-5],[70,0],[61,4],[36,3]],'#c6d18a');
 for(let i=0;i<7;i++){let sx=37+i*4;rect(sx,-11+(i%2),2,2,'#83c45a')}
-rect(47,-16,4,3,'#e8d85a');rect(49,-16,2,2,'#141b12');rect(61,-10,3,2,'#18231a'); // nostril
-// teeth
-for(let i=0;i<5;i++)poly([[43+i*4,-3],[45+i*4,-3],[44+i*4,0]],'#fff1c4');
-// expressive confident brow
+rect(47,-16,4,3,'#e8d85a');rect(49,-16,2,2,'#141b12');rect(61,-10,3,2,'#18231a');
 line(44,-18,51,-19,'#204c27',2);
-// visible five-finger front hand
-poly([[18,2],[24,3],[26,8],[23,10],[21,7],[20,12],[17,12],[17,8],[14,11],[12,9],[15,5],[12,7],[11,5],[16,2]],'#4a9b43');rect(17,10,2,2,'#c6d18a');
+// Mandíbula articulada: se abre al morder y se cierra al terminar
+const jawOpen=player.attack==='bite'&&active?Math.sin(progress*Math.PI)*13:0;
+poly([[37,-2],[66,-4],[72,1+jawOpen],[63,7+jawOpen],[43,5+jawOpen]],'#347b35');
+poly([[43,3+jawOpen],[66,2+jawOpen],[70,5+jawOpen],[61,9+jawOpen],[45,7+jawOpen]],'#c6d18a');
+for(let i=0;i<5;i++)poly([[44+i*4,0],[46+i*4,0],[45+i*4,3]],'#fff1c4');
+for(let i=0;i<5;i++)poly([[45+i*4,6+jawOpen],[47+i*4,6+jawOpen],[46+i*4,3+jawOpen]],'#fff1c4');
+// Brazo y mano con cinco dedos visibles
+poly([[18,2],[24,3],[26,8],[23,10],[21,7],[20,12],[17,12],[17,8],[14,11],[12,9],[15,5],[12,7],[11,5],[16,2]],'#4a9b43');
+rect(17,10,2,2,'#c6d18a');
+// Pisotón: levanta una pata y golpea el suelo
+if(player.attack==='stomp'&&active){
+const stomp=Math.sin(progress*Math.PI);
+poly([[9,3],[18,4],[23,10+stomp*7],[15,12+stomp*7],[8,8]],'#4b9b43');
+if(progress>.65){line(0,20,18,20,'#d4d58a',2);line(8,18,8,23,'#d4d58a',1)}
+}
+// Efectos visuales del giro
+if(player.attack==='roll'&&active){ctx.strokeStyle='#d5e78a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,37,Math.PI*progress,Math.PI*progress+1.5);ctx.stroke()}
 ctx.restore()}
-function drawRat(r){let x=240+(r.x-player.x)*16,y=190+(r.z-player.z)*9;let bob=Math.sin(r.phase)*2+(r.leap>0?-r.leap*17:0);ctx.save();ctx.translate(x,y-bob);if(r.hit>0)ctx.globalAlpha=.5;rect(-10,5,21,4,'#151713');poly([[-10,-1],[-7,-7],[4,-8],[11,-3],[8,3],[-6,3]],'#514a45');poly([[2,-6],[7,-12],[12,-10],[12,-5]],'#6c6058');rect(7,-11,4,4,'#bd7770');rect(8,-7,2,2,'#f4d1a1');rect(10,-7,2,2,'#d84d3d');line(-9,0,-19,6,'#b77b73',2);for(let i=0;i<3;i++)line(-5+i*6,2,-7+i*6,7,'#b6a18d',1);ctx.restore()}
+function drawRat(r){
+let x=240+(r.x-player.x)*16,y=190+(r.z-player.z)*9;
+let run=Math.sin(r.phase*1.7),bob=Math.abs(run)*2+(r.leap>0?-Math.sin((.35-r.leap)/.35*Math.PI)*13:0);
+ctx.save();ctx.translate(x,y-bob);if(r.hit>0)ctx.globalAlpha=.5;
+rect(-11,5,23,4,'#151713');
+poly([[-10,-1],[-7,-7],[4,-8],[11,-3],[8,3],[-6,3]],'#514a45');
+poly([[2,-6],[7,-12],[12,-10],[12,-5]],'#6c6058');rect(7,-11,4,4,'#bd7770');
+rect(8,-7,2,2,'#f4d1a1');rect(10,-7,2,2,'#d84d3d');
+line(-9,0,-19,6+run*2,'#b77b73',2);
+for(let i=0;i<3;i++){line(-5+i*6,2,-7+i*6,7+(i%2?run:-run)*2,'#b6a18d',1)}
+// pequeños dientes cuando salta a atacar
+if(r.leap>0){poly([[8,-2],[13,-1],[9,1]],'#fff0cf');line(12,-2,17,-5,'#b77b73',1)}
+ctx.restore()}
 function render(){ctx.save();ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.imageSmoothingEnabled=false;drawBackground();
 // distant rat silhouettes crossing tunnel
 for(let i=0;i<3;i++){let xx=((i*177+elapsed*27)%540)-30,yy=88+(i%2)*22;rect(xx,yy,12,5,'#17211c');rect(xx+8,yy-4,7,5,'#17211c');line(xx,yy+4,xx-8,yy+8,'#17211c',2)}
 let sorted=[...rats].sort((a,b)=>a.z-b.z);for(const r of sorted)drawRat(r);
-let px=240,py=190;let sx=1+player.z*.012,sy=1+player.z*.008;ctx.save();ctx.translate(px,py+player.z*2);ctx.scale(sx,sy);if(player.inv>0&&Math.floor(elapsed*20)%2===0)ctx.globalAlpha=.55;drawCroc(0,0,1);ctx.restore();
+let px=240,py=190;let sx=1+player.z*.012,sy=1+player.z*.008;ctx.save();ctx.translate(px,py+player.z*2);ctx.scale(sx,sy);if(player.inv>0&&Math.floor(elapsed*20)%2===0)ctx.globalAlpha=.55;ctx.scale(player.face,1);drawCroc(0,0,1);ctx.restore();
 // foreground reeds and debris
-for(let i=0;i<8;i++){let x=i*67+((i%2)*11);line(x,292,x-5,270,'#55783f',3);line(x,292,x+6,274,'#6a8d4a',2)}
+for(let i=0;i<8;i++){let x=i*67+((i%2)*11),sway=Math.sin(elapsed*2+i)*3;line(x,292,x-5+sway,270,'#55783f',3);line(x,292,x+6+sway,274,'#6a8d4a',2)}
 // vignette
 let vg=ctx.createRadialGradient(240,150,80,240,150,270);vg.addColorStop(0,'#0000');vg.addColorStop(1,'#07100c99');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
 if(shake>0){shake-=.016;ctx.translate(rand(-2,2),rand(-2,2))}ctx.restore()}
