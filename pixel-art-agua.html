@@ -1,91 +1,65 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#101a18"><title>El Cocodrilo — Pixel Art 2.5D</title>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#101a18"><title>El Cocodrilo — Alcantarilla SNES</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101a18;color:#f2f0cf;font-family:system-ui,sans-serif;touch-action:none}canvas{width:100%;height:100%;display:block;image-rendering:pixelated}#hud{position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) 12px 12px}#top{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:900;text-shadow:2px 2px #000}#bar{width:92px;height:9px;border:1px solid #e5e5bb;background:#292d25}#hp{height:100%;width:100%;background:#a9d45a}#status{margin-left:auto}#controls{position:absolute;inset:auto 12px 16px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}#stick{width:116px;height:116px;border:3px solid #d7dfb477;border-radius:50%;background:#15251dcc;display:grid;place-items:center;pointer-events:auto}#nub{width:42px;height:42px;border-radius:50%;background:#dce8b8;border:2px solid #fff}#buttons{display:grid;grid-template-columns:repeat(2,76px);gap:7px;pointer-events:auto}button{min-height:46px;border:2px solid #dce8b8;border-radius:9px;background:#294333;color:#fff;font-weight:900;font-size:11px;box-shadow:0 3px #101710}button:active{transform:translateY(2px)}#start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 25px;font-size:16px;pointer-events:auto}#msg{position:absolute;top:18%;left:8%;width:84%;text-align:center;color:#f6df79;font-weight:1000;font-size:17px;text-shadow:2px 2px #101710}#help{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;color:#d5dfbf99}@media(min-width:700px){#stick{width:135px;height:135px}#buttons{grid-template-columns:repeat(2,88px)}}
-</style></head><body><canvas id="c"></canvas><div id="hud"><div id="top"><div id="bar"><div id="hp"></div></div><span id="count">RATAS 0/8</span><span id="status">SECO</span></div><div id="msg">LA ALCANTARILLA</div><button id="start">ENTRAR</button><div id="controls"><div id="stick"><div id="nub"></div></div><div id="buttons"><button data-act="bite">MORDISCO</button><button data-act="tail">COLAZO</button><button data-act="dive">SUMERGIRSE</button><button data-act="ambush">EMBOSCADA</button></div></div><div id="help">Joystick: muévete en todas las direcciones · entra al agua para ocultarte</div></div>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101a18;color:#f4edc9;font-family:system-ui,sans-serif;touch-action:none}canvas{width:100%;height:100%;display:block;image-rendering:pixelated}#hud{position:fixed;inset:0;padding:env(safe-area-inset-top) 12px 12px;pointer-events:none}#top{display:flex;gap:9px;align-items:center;font-size:11px;font-weight:900;text-shadow:2px 2px #000}#bar{width:86px;height:9px;border:1px solid #eee;background:#252b24}#hp{height:100%;width:100%;background:#a9d45a}#status{margin-left:auto}#controls{position:absolute;inset:auto 12px 15px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}#stick{width:112px;height:112px;border:3px solid #d7dfb477;border-radius:50%;background:#15251dcc;display:grid;place-items:center;pointer-events:auto}#nub{width:40px;height:40px;border-radius:50%;background:#dce8b8;border:2px solid #fff}#buttons{display:grid;grid-template-columns:repeat(2,72px);gap:7px;pointer-events:auto}button{min-height:43px;border:2px solid #dce8b8;border-radius:8px;background:#294333;color:#fff;font-weight:1000;font-size:10px;box-shadow:0 3px #101710;touch-action:none}button:active{transform:translateY(2px)}#start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 25px;font-size:16px;pointer-events:auto}#msg{position:absolute;top:16%;left:7%;width:86%;text-align:center;color:#f6df79;font-weight:1000;font-size:16px;text-shadow:2px 2px #101710}#help{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;color:#d5dfbf99}@media(min-width:700px){#stick{width:130px;height:130px}#buttons{grid-template-columns:repeat(2,86px)}}
+</style></head><body><canvas id="game"></canvas><div id="hud"><div id="top"><div id="bar"><div id="hp"></div></div><span id="rats">RATAS 0/8</span><span id="status">NIVEL 1</span></div><div id="msg">EL DESCENSO A LA ALCANTARILLA</div><button id="start">JUGAR</button><div id="controls"><div id="stick"><div id="nub"></div></div><div id="buttons"><button data-act="jump">SALTAR</button><button data-act="bite">MORDISCO</button><button data-act="tail">COLAZO</button><button data-act="dive">AGUA</button></div></div><div id="help">Muévete · salta escalones · sube por las rampas · cámara dinámica</div></div>
 <script>
 (()=>{'use strict';
-const c=document.getElementById('c'),g=c.getContext('2d'),W=320,H=180;let dpr=1;
-function resize(){dpr=Math.min(devicePixelRatio||1,3);c.width=Math.floor(innerWidth*dpr);c.height=Math.floor(innerHeight*dpr)}addEventListener('resize',resize);resize();
-const $=id=>document.getElementById(id),hp=$('hp'),count=$('count'),status=$('status'),msg=$('msg'),start=$('start');
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
-let t=0,last=performance.now(),running=false,toast=0,joy={x:0,y:0},keys={},pointer=null;
-let p,rats=[],kills,waterHidden=false,attack='',attackT=0,inv=0;
-const croc=[
-'................',
-'................',
-'.....GGGG.......',
-'...GGGGGGGGG....',
-'..GGGGGGGGGGGG..',
-'.GGGGGGGGGGGGGG.',
-'.GGGGGGGGGGGGGGG',
-'.GGGGGGGGGGGGGGG',
-'..GGGGGGGGGGGGGG',
-'...GGGGGGGGGGGG.',
-'.....GGGGGGGG...',
-'......GGGG......',
-'.....GG..GG.....',
-'....GG....GG....',
-'...GG......GG...',
-'..GG........GG..'];
-const rat=[
-'....rr....',
-'...rrrrr..',
-'..rBBBBrr.',
-'.rBBBBBBRr',
-'.rBBBBBBRRR',
-'..BBBBBBBB.',
-'...BB..BB...',
-'..BB....BB..'];
-function sprite(data,x,y,s,palette,flip=false){g.save();if(flip){g.translate(x*2+s*data[0].length,0);g.scale(-1,1);x=0}for(let j=0;j<data.length;j++)for(let i=0;i<data[j].length;i++){let ch=data[j][i];if(ch!=='.'&&palette[ch]){g.fillStyle=palette[ch];g.fillRect(Math.round(x+i*s),Math.round(y+j*s),s,s)}}g.restore()}
-const green={G:'#3d963e'},rp={r:'#a56c61',B:'#62574d',R:'#e3b45c'};
-function say(s){msg.textContent=s;toast=1.7}
-function spawn(){rats=Array.from({length:8},(_,i)=>({x:rnd(38,282),z:rnd(40,118),hp:2,phase:rnd(0,6),cool:rnd(.5,2),hit:0}));}
-function begin(){p={x:155,z:94,h:100,face:1,walk:0};kills=0;waterHidden=false;attack='';attackT=0;spawn();running=true;start.hidden=true;say('¡LAS RATAS HAN OÍDO EL CHAPOTEO!');count.textContent='RATAS 0/8'}
+const c=document.getElementById('game'),g=c.getContext('2d'),W=400,H=225;function resize(){c.width=Math.floor(innerWidth*Math.min(devicePixelRatio||1,2));c.height=Math.floor(innerHeight*Math.min(devicePixelRatio||1,2))}addEventListener('resize',resize);resize();
+const $=id=>document.getElementById(id),hp=$('hp'),ratsUI=$('rats'),status=$('status'),msg=$('msg'),start=$('start');const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
+let now=0,last=performance.now(),running=false,joy={x:0,y:0},keys={},pointer=null,toast=0,shake=0;
+let player,foes=[],camera={x:0,y:0},kills=0,water=false,attack='',attackTime=0,inv=0,levelEnd=0;
+const platforms=[
+{x:0,y:174,w:190,h:50},{x:218,y:174,w:105,h:50},
+{x:335,y:158,w:95,h:70},{x:465,y:142,w:95,h:85},
+{x:590,y:126,w:90,h:100},{x:710,y:126,w:105,h:100},
+{x:850,y:108,w:95,h:120},{x:980,y:90,w:105,h:140},
+{x:1120,y:90,w:110,h:140},{x:1260,y:72,w:105,h:160},
+{x:1390,y:54,w:120,h:180},{x:1540,y:54,w:130,h:180},
+{x:1700,y:36,w:130,h:200},{x:1850,y:36,w:160,h:200}
+];
+const ramps=[{x:170,y:174,w:90,h:16,dy:-16},{x:405,y:158,w:100,h:16,dy:-16},{x:675,y:126,w:80,h:16,dy:0},{x:800,y:126,w:90,h:18,dy:-18},{x:1080,y:90,w:100,h:18,dy:0},{x:1480,y:54,w:100,h:18,dy:0}];
+const stairs=[{x:300,y:174,n:4,step:12,rise:5},{x:550,y:142,n:4,step:12,rise:4},{x:910,y:108,n:4,step:12,rise:5},{x:1210,y:90,n:4,step:12,rise:4},{x:1640,y:54,n:4,step:12,rise:4}];
+function say(s){msg.textContent=s;toast=1.8}
+function makeRat(x,y){return{x,y,vx:0,phase:rnd(0,6),hp:2,hit:0,cool:rnd(.5,1.5),alive:true}}
+function begin(){player={x:50,y:145,vx:0,vy:0,w:25,h:24,face:1,ground:false,health:100,walk:0};foes=[makeRat(260,150),makeRat(380,135),makeRat(515,119),makeRat(650,103),makeRat(790,103),makeRat(940,85),makeRat(1110,67),makeRat(1370,31)];kills=0;camera={x:0,y:0};running=true;water=false;attack='';start.hidden=true;say('¡SUBE! LAS RATAS HAN TOMADO EL TÚNEL');}
 start.onclick=begin;
-function doAttack(a){if(!running||attackT>0)return;if(a==='dive'){if(p.z>102){waterHidden=!waterHidden;say(waterHidden?'TE OCULTAS BAJO EL AGUA':'SALES DEL AGUA')}else say('ACÉRCATE AL AGUA PARA SUMERGIRTE');return}
-if(a==='ambush'&&!waterHidden){say('SUMÉRGETE ANTES DE EMBOSCAR');return}
-if(a==='ambush'&&waterHidden){waterHidden=false;attack='ambush';attackT=.62}
-else{attack=a;attackT=.38}
-let reach=a==='ambush'?52:a==='tail'?34:26,hit=0;
-for(const r of rats){let dx=r.x-p.x,dz=r.z-p.z;if(Math.hypot(dx,dz)<reach&&((a!=='bite'&&a!=='ambush')||dx*p.face> -8)){r.hp-=a==='ambush'?2:1;r.hit=.25;hit++;if(r.hp<=0)r.dead=true}}
-rats=rats.filter(r=>!r.dead);kills=8-rats.length;count.textContent='RATAS '+kills+'/8';if(hit)say(a==='ambush'?'¡EMBOSCADA DESDE EL AGUA!':a==='bite'?'¡ÑAC!':'¡GOLPE!');else say('¡ACÉRCATE A LAS RATAS!');if(kills===8){running=false;start.hidden=false;start.textContent='OTRA PARTIDA';say('¡ALCANTARILLA DESPEJADA!')}}
-document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();doAttack(b.dataset.act)}));
-addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space')doAttack('bite');if(e.code==='KeyJ')doAttack('tail')});addEventListener('keyup',e=>keys[e.code]=false);
-const stick=$('stick'),nub=$('nub');function moveJoy(e){let r=stick.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2),m=Math.max(1,Math.hypot(x,y));joy.x=x/m;joy.y=y/m;nub.style.transform='translate('+joy.x*28+'px,'+joy.y*28+'px)'}
-stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);moveJoy(e)});stick.addEventListener('pointermove',e=>{if(pointer===e.pointerId)moveJoy(e)});function release(e){if(pointer===e.pointerId){pointer=null;joy={x:0,y:0};nub.style.transform=''}}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
-function update(dt){t+=dt;if(toast>0){toast-=dt;if(toast<=0)msg.textContent=''}if(!running)return;attackT=Math.max(0,attackT-dt);inv=Math.max(0,inv-dt);
-let dx=joy.x+(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0),dz=joy.y+(keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0),m=Math.hypot(dx,dz);if(m>1){dx/=m;dz/=m}p.x=clamp(p.x+dx*70*dt,22,298);p.z=clamp(p.z+dz*58*dt,28,143);if(dx)p.face=Math.sign(dx);p.walk+=m*dt*12;
-let inWater=p.z>111;p.h=inWater?Math.max(0,p.h):p.h;waterHidden=waterHidden&&inWater;status.textContent=waterHidden?'OCULTO BAJO EL AGUA':inWater?'EN EL AGUA':'SECO';
-for(const r of rats){r.phase+=dt*8;r.cool-=dt;r.hit=Math.max(0,r.hit-dt);let ax=p.x-r.x,az=p.z-r.z,d=Math.hypot(ax,az)||1;if(d<100&&!waterHidden){r.x+=ax/d*20*dt;r.z+=az/d*17*dt;if(d<17&&r.cool<0&&inv<=0){p.h-=8;inv=.6;r.cool=1.2;say('¡UNA RATA TE HA MORDIDO!')}}else if(waterHidden){r.x+=Math.sin(r.phase)*dt*5;r.z+=Math.cos(r.phase)*dt*3}}
-hp.style.width=clamp(p.h,0,100)+'%';if(p.h<=0){running=false;start.hidden=false;start.textContent='REINTENTAR';say('¡TE HAN VENCIDO!')}}
-function polygon(points,color){g.fillStyle=color;g.beginPath();g.moveTo(...points[0]);for(let i=1;i<points.length;i++)g.lineTo(...points[i]);g.closePath();g.fill()}
-function background(){g.fillStyle='#172421';g.fillRect(0,0,W,H);
-// back wall and arched tunnel
-g.fillStyle='#394b40';g.fillRect(0,0,W,82);g.fillStyle='#71806a';g.beginPath();g.moveTo(0,0);g.lineTo(0,58);g.quadraticCurveTo(160,-45,320,58);g.lineTo(320,0);g.fill();
-for(let x=0;x<320;x+=32){g.fillStyle='#52634e';g.fillRect(x,27+(x%3)*3,22,4);g.fillStyle='#293a32';g.fillRect(x+5,34,3,3)}
-// perspective floor trapezoid with tiled stones
-polygon([[0,72],[320,72],[320,180],[0,180]],'#4b5542');
-for(let row=0;row<6;row++){let y=77+row*18,wide=18+row*8;g.strokeStyle='#69715a';g.lineWidth=1;g.beginPath();g.moveTo(0,y);g.lineTo(320,y);g.stroke();for(let x=-40;x<360;x+=wide){g.strokeStyle='#3a493a';g.beginPath();g.moveTo(160+(x-160)*(0.35+row*.13),y);g.lineTo(160+(x-160)*(0.35+row*.13),y+17);g.stroke()}}
- // water pool at foreground, clear shoreline
-polygon([[0,123],[45,112],[112,119],[180,108],[252,117],[320,107],[320,180],[0,180]],'#205c61');
-for(let i=0;i<24;i++){let x=(i*47+t*(12+i%3*9))%340,y=126+(i*13)%48;g.fillStyle=i%3?'#4b9990':'#8bc2a1';g.fillRect(x,y,7+i%5,1)}
-for(let i=0;i<7;i++){let x=i*49+Math.sin(t*1.8+i)*3;g.fillStyle='#477344';g.fillRect(x,111,3,17);g.fillRect(x-4,114,5,3)}
-// sewer pipes
-g.fillStyle='#202e29';g.fillRect(0,67,320,7);g.fillStyle='#89917a';g.fillRect(0,67,320,2);for(let x=15;x<320;x+=58){g.fillStyle='#7c806a';g.fillRect(x,60,5,17)}
+function jump(){if(running&&player.ground){player.vy=-178;player.ground=false;}}
+function act(a){if(!running)return;if(a==='jump'){jump();return}if(a==='dive'){if(player.y>145){water=!water;say(water?'TE SUMERGES EN EL CANAL':'SALES DEL AGUA')}else say('BUSCA EL CANAL DE AGUA');return}if(attackTime>0)return;attack=a;attackTime=.38;let n=0;foes.forEach(r=>{if(!r.alive)return;let dx=r.x-player.x,dy=Math.abs(r.y-player.y);if(Math.abs(dx)<(a==='tail'?48:38)&&dy<34&&(a==='tail'||dx*player.face>-8)){r.hp--;r.hit=.25;n++;if(r.hp<=0){r.alive=false;kills++}}});ratsUI.textContent='RATAS '+kills+'/8';say(n?'¡BUEN GOLPE!':'¡ACÉRCATE A LAS RATAS!');if(kills===8){levelEnd=1;say('¡TÚNEL DESPEJADO! SIGUE SUBIENDO');}}
+document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();act(b.dataset.act)}));
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')jump();if(e.code==='KeyJ')act('bite');if(e.code==='KeyK')act('tail')});addEventListener('keyup',e=>keys[e.code]=false);
+const stick=$('stick'),nub=$('nub');function joyMove(e){let r=stick.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2),m=Math.max(1,Math.hypot(x,y));joy.x=x/m;joy.y=y/m;nub.style.transform='translate('+joy.x*27+'px,'+joy.y*27+'px)'}stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);joyMove(e)});stick.addEventListener('pointermove',e=>{if(pointer===e.pointerId)joyMove(e)});function release(e){if(pointer===e.pointerId){pointer=null;joy={x:0,y:0};nub.style.transform=''}}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
+function groundAt(x,yPrev){let best=null;for(const p of platforms){if(x+10>p.x&&x-10<p.x+p.w&&yPrev+player.h<=p.y+14&&yPrev+player.h>=p.y-28){if(!best||p.y<best.y)best=p}}for(const s of stairs){for(let i=0;i<s.n;i++){let sx=s.x+i*s.step,sy=s.y-i*s.rise;if(x+9>sx&&x-9<sx+s.step&&yPrev+player.h<=sy+14&&yPrev+player.h>=sy-25){if(!best||sy<best.y)best={x:sx,y:sy,w:s.step,h:12}}}}return best}
+function update(dt){now+=dt;if(toast>0){toast-=dt;if(toast<=0)msg.textContent=''}if(!running)return;attackTime=Math.max(0,attackTime-dt);inv=Math.max(0,inv-dt);shake=Math.max(0,shake-dt);
+let ax=joy.x+(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0);if(Math.abs(ax)>1)ax=Math.sign(ax);player.vx=ax*92;if(ax)player.face=Math.sign(ax);player.x=clamp(player.x+player.vx*dt,8,1980);
+let oldY=player.y;player.vy+=360*dt;player.y+=player.vy*dt;player.ground=false;
+let plat=groundAt(player.x,oldY);if(plat&&player.vy>=0&&player.y+player.h>=plat.y&&oldY+player.h<=plat.y+17){player.y=plat.y-player.h;player.vy=0;player.ground=true}
+for(const r of foes){if(!r.alive)continue;r.phase+=dt*7;r.hit=Math.max(0,r.hit-dt);r.cool-=dt;let dx=player.x-r.x;if(Math.abs(dx)<110){r.x+=Math.sign(dx)*25*dt;if(Math.abs(dx)<22&&Math.abs(player.y-r.y)<25&&r.cool<0&&inv<=0){player.health-=7;inv=.65;r.cool=1.2;shake=.18;say('¡TE HA MORDIDO UNA RATA!')}}else r.x+=Math.sin(r.phase)*8*dt}
+camera.x+=(clamp(player.x-135,0,1600)-camera.x)*Math.min(1,dt*5);let targetY=clamp(player.y-115,-100,100);camera.y+=(targetY-camera.y)*Math.min(1,dt*4);
+hp.style.width=clamp(player.health,0,100)+'%';status.textContent='ALTURA '+Math.max(1,Math.floor((2000-player.x)/200))+' · '+(player.ground?'SUELO':'AIRE');if(player.y>280||player.health<=0){running=false;start.hidden=false;start.textContent='REINTENTAR';say('¡CAÍSTE EN EL CANAL!');}}
+function rect(x,y,w,h,col){g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function tileFloor(x,y,w,h){rect(x,y,w,h,'#555744');rect(x,y,w,4,'#87906a');for(let xx=x;xx<x+w;xx+=18){rect(xx,y+5,1,h-5,'#343e35');rect(xx+2,y+12,12,1,'#73745b')}for(let yy=y+20;yy<y+h;yy+=22)rect(x,yy,w,1,'#333d35')}
+function drawBg(){rect(0,0,W,H,'#172522'); // layered tunnel wall
+rect(0,0,W,130,'#34483d');for(let i=0;i<8;i++){let x=((i*73-camera.x*.22)%460+460)%460;rect(x,18,42,6,'#52634e');rect(x+6,25,3,10,'#26382f');rect(x+30,27,18,3,'#69715a')}
+ // ceiling ribs parallax
+for(let i=0;i<7;i++){let x=((i*76-camera.x*.38)%480+480)%480;rect(x,0,5,95,'#26372f');rect(x+5,0,3,88,'#68745d')}
+ // sewer pipes
+rect(0,70,400,8,'#1b2b27');rect(0,70,400,2,'#9a9874');for(let i=0;i<6;i++){let x=((i*92-camera.x*.7)%460+460)%460;rect(x,62,8,20,'#85866d');rect(x+2,62,3,20,'#b0a782')}
+ // distant water channel
+rect(0,184,400,41,'#164c53');for(let i=0;i<18;i++){let x=(i*29+now*(12+i%4*5))%410;rect(x,190+(i*7)%29,12,1,'#5ca49a')}
 }
-function drawPlayer(){let scale=1+p.z/330,x=p.x-8*scale,y=p.z-14*scale;if(waterHidden){g.fillStyle='#7fc0ae';g.fillRect(p.x-13,y+7,25,2);g.fillRect(p.x-8,y+11,17,1);return}
-g.save();g.translate(p.x,p.z);g.scale(scale,scale);if(p.face<0)g.scale(-1,1);
-let bob=Math.abs(Math.sin(p.walk))*2;g.fillStyle='#15231a';g.fillRect(-15,5,32,4);
-sprite(croc,-15,-15-bob,2,green);
- // eye and articulated jaw, visibly opens during bite
-g.fillStyle='#e5d65b';g.fillRect(12,-10-bob,4,3);g.fillStyle='#111';g.fillRect(14,-10-bob,2,2);
-if(attack==='bite'&&attackT>0){let open=Math.sin((1-attackT/.38)*Math.PI)*8;g.fillStyle='#347b35';g.fillRect(10,-3+open,20,4);g.fillStyle='#fff0c5';g.fillRect(15,1+open,3,3);g.fillRect(22,1+open,3,3)}
-if(attack==='tail'&&attackT>0){g.fillStyle='#b7d46a';g.fillRect(-38,-2,22,3)}
-if(attack==='ambush'&&attackT>0){g.fillStyle='#d6e98c';g.fillRect(-20,-20,45,2);g.fillRect(-25,-16,55,2)}
-g.restore()}
-function drawRat(r){let s=.75+r.z/260,x=r.x,y=r.z-8*s;g.save();g.translate(x,y);if(r.hit>0)g.globalAlpha=.5;sprite(rat,-6*s,-6*s,1.4*s,rp);g.fillStyle='#d98d82';g.fillRect(-12*s,1*s,7*s,1);g.fillStyle='#edc46b';g.fillRect(4*s,-5*s,2*s,2*s);g.restore()}
-function render(){g.save();g.setTransform(c.width/W,0,0,c.height/H,0,0);g.imageSmoothingEnabled=false;background();let order=rats.map(r=>({z:r.z,draw:()=>drawRat(r)}));if(running||p)order.push({z:p.z,draw:drawPlayer});order.sort((a,b)=>a.z-b.z).forEach(o=>o.draw());if(waterHidden){g.fillStyle='#78c7b8';g.globalAlpha=.25;g.fillRect(0,108,320,72);g.globalAlpha=1}let vg=g.createRadialGradient(160,85,45,160,85,190);vg.addColorStop(0,'#0000');vg.addColorStop(1,'#07110c99');g.fillStyle=vg;g.fillRect(0,0,W,H);g.restore()}
-function loop(now){let dt=Math.min(.04,(now-last)/1000);last=now;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-})();
-</script></body></html>
+function drawWorld(){// platforms and ledges
+for(const p of platforms){let x=p.x-camera.x,y=p.y-camera.y;if(x<-180||x>W+100)continue;tileFloor(x,y,p.w,p.h);rect(x,y-5,p.w,5,'#8c8d69');rect(x+4,y-8,p.w-8,3,'#b0a77b')}
+for(const s of stairs){for(let i=0;i<s.n;i++){let x=s.x+i*s.step-camera.x,y=s.y-i*s.rise-camera.y;tileFloor(x,y,s.step,16);rect(x,y-4,s.step,4,'#a4a078')}}
+for(const r of ramps){let x=r.x-camera.x,y=r.y-camera.y;g.fillStyle='#6a6b52';g.beginPath();g.moveTo(x,y);g.lineTo(x+r.w,y+r.dy);g.lineTo(x+r.w,y+22);g.lineTo(x,y+22);g.fill();g.strokeStyle='#b2a77a';g.beginPath();g.moveTo(x,y);g.lineTo(x+r.w,y+r.dy);g.stroke()}
+ // pipes and wall grime foreground details
+for(let i=0;i<9;i++){let x=((i*61-camera.x*.95)%450+450)%450;rect(x,112-camera.y*.3,4,34,'#7a8068');rect(x-3,125-camera.y*.3,10,4,'#a09b76')}
+}
+function drawCroc(){let x=player.x-camera.x,y=player.y-camera.y;g.save();g.translate(x,y);if(player.face<0)g.scale(-1,1);let bob=player.ground?Math.abs(Math.sin(now*13))*2:0; // chunky SNES sprite
+rect(-12,13-bob,24,9,'#205b31');rect(-15,4-bob,25,13,'#3b963e');rect(-8,-3-bob,20,12,'#4da947');rect(5,-1-bob,17,7,'#3d963e');rect(15,1-bob,10,4,'#66b94b');rect(21,2-bob,5,3,'#d6b96d');rect(11,-5-bob,4,4,'#e8d65d');rect(13,-4-bob,2,2,'#101b14');rect(-9,17-bob,7,7,'#246a35');rect(5,17-bob,8,7,'#246a35');rect(-5,8-bob,12,5,'#c0c76c');for(let i=0;i<5;i++)rect(-5+i*5,4-bob,2,2,'#276c35');
+if(attack==='bite'&&attackTime>0){rect(17,7,18,4,'#327e37');rect(23,10,2,3,'#f5eac7');rect(31,10,2,3,'#f5eac7')}if(attack==='tail'&&attackTime>0){rect(-34,8,22,5,'#64a944');rect(-39,7,8,7,'#357b39')}g.restore()}
+function drawRat(r){let x=r.x-camera.x,y=r.y-camera.y;if(x<-20||x>420)return;g.save();if(r.hit>0)g.globalAlpha=.5;rect(x-7,y+9,15,7,'#5e5148');rect(x-4,y+3,12,8,'#756052');rect(x+4,y+2,7,5,'#9d7866');rect(x+7,y+3,2,2,'#e6c76b');rect(x-10,y+12,8,2,'#ad7567');rect(x-3,y+14,3,4,'#4d4039');rect(x+5,y+14,3,4,'#4d4039');g.restore()}
+function render(){g.save();g.setTransform(c.width/W,0,0,c.height/H,0,0);if(shake>0)g.translate(rnd(-2,2),rnd(-1,1));drawBg();drawWorld();foes.forEach(r=>{if(r.alive)drawRat(r)});if(player)drawCroc(); // cinematic dark edges
+let v=g.createRadialGradient(200,100,60,200,110,250);v.addColorStop(0,'#0000');v.addColorStop(1,'#06100c88');g.fillStyle=v;g.fillRect(0,0,W,H);g.restore()}
+function loop(ts){let dt=Math.min(.035,(ts-last)/1000);last=ts;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+})();</script></body></html>
