@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#101a18"><title>El Cocodrilo — Pixel Art 2.5D</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101a18;color:#f2f0cf;font-family:system-ui,sans-serif;touch-action:none}canvas{width:100%;height:100%;display:block;image-rendering:pixelated}#hud{position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) 12px 12px}#top{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:900;text-shadow:2px 2px #000}#bar{width:92px;height:9px;border:1px solid #e5e5bb;background:#292d25}#hp{height:100%;width:100%;background:#a9d45a}#status{margin-left:auto}#controls{position:absolute;inset:auto 12px 16px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}#stick{width:116px;height:116px;border:3px solid #d7dfb477;border-radius:50%;background:#15251dcc;display:grid;place-items:center;pointer-events:auto}#nub{width:42px;height:42px;border-radius:50%;background:#dce8b8;border:2px solid #fff}#buttons{display:grid;grid-template-columns:repeat(2,76px);gap:7px;pointer-events:auto}button{min-height:46px;border:2px solid #dce8b8;border-radius:9px;background:#294333;color:#fff;font-weight:900;font-size:11px;box-shadow:0 3px #101710}button:active{transform:translateY(2px)}#start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 25px;font-size:16px;pointer-events:auto}#msg{position:absolute;top:18%;left:8%;width:84%;text-align:center;color:#f6df79;font-weight:1000;font-size:17px;text-shadow:2px 2px #101710}#help{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;color:#d5dfbf99}@media(min-width:700px){#stick{width:135px;height:135px}#buttons{grid-template-columns:repeat(2,88px)}}
+</style></head><body><canvas id="c"></canvas><div id="hud"><div id="top"><div id="bar"><div id="hp"></div></div><span id="count">RATAS 0/8</span><span id="status">SECO</span></div><div id="msg">LA ALCANTARILLA</div><button id="start">ENTRAR</button><div id="controls"><div id="stick"><div id="nub"></div></div><div id="buttons"><button data-act="bite">MORDISCO</button><button data-act="tail">COLAZO</button><button data-act="dive">SUMERGIRSE</button><button data-act="ambush">EMBOSCADA</button></div></div><div id="help">Joystick: muévete en todas las direcciones · entra al agua para ocultarte</div></div>
+<script>
+(()=>{'use strict';
+const c=document.getElementById('c'),g=c.getContext('2d'),W=320,H=180;let dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,3);c.width=Math.floor(innerWidth*dpr);c.height=Math.floor(innerHeight*dpr)}addEventListener('resize',resize);resize();
+const $=id=>document.getElementById(id),hp=$('hp'),count=$('count'),status=$('status'),msg=$('msg'),start=$('start');
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
+let t=0,last=performance.now(),running=false,toast=0,joy={x:0,y:0},keys={},pointer=null;
+let p,rats,kills,waterHidden=false,attack='',attackT=0,inv=0;
+const croc=[
+'................',
+'................',
+'.....GGGG.......',
+'...GGGGGGGGG....',
+'..GGGGGGGGGGGG..',
+'.GGGGGGGGGGGGGG.',
+'.GGGGGGGGGGGGGGG',
+'.GGGGGGGGGGGGGGG',
+'..GGGGGGGGGGGGGG',
+'...GGGGGGGGGGGG.',
+'.....GGGGGGGG...',
+'......GGGG......',
+'.....GG..GG.....',
+'....GG....GG....',
+'...GG......GG...',
+'..GG........GG..'];
+const rat=[
+'....rr....',
+'...rrrrr..',
+'..rBBBBrr.',
+'.rBBBBBBRr',
+'.rBBBBBBRRR',
+'..BBBBBBBB.',
+'...BB..BB...',
+'..BB....BB..'];
+function sprite(data,x,y,s,palette,flip=false){g.save();if(flip){g.translate(x*2+s*data[0].length,0);g.scale(-1,1);x=0}for(let j=0;j<data.length;j++)for(let i=0;i<data[j].length;i++){let ch=data[j][i];if(ch!=='.'&&palette[ch]){g.fillStyle=palette[ch];g.fillRect(Math.round(x+i*s),Math.round(y+j*s),s,s)}}g.restore()}
+const green={G:'#3d963e'},rp={r:'#a56c61',B:'#62574d',R:'#e3b45c'};
+function say(s){msg.textContent=s;toast=1.7}
+function spawn(){rats=Array.from({length:8},(_,i)=>({x:rnd(38,282),z:rnd(40,118),hp:2,phase:rnd(0,6),cool:rnd(.5,2),hit:0}));}
+function begin(){p={x:155,z:94,h:100,face:1,walk:0};kills=0;waterHidden=false;attack='';attackT=0;spawn();running=true;start.hidden=true;say('¡LAS RATAS HAN OÍDO EL CHAPOTEO!');count.textContent='RATAS 0/8'}
+start.onclick=begin;
+function doAttack(a){if(!running||attackT>0)return;if(a==='dive'){if(p.z>102){waterHidden=!waterHidden;say(waterHidden?'TE OCULTAS BAJO EL AGUA':'SALES DEL AGUA')}else say('ACÉRCATE AL AGUA PARA SUMERGIRTE');return}
+if(a==='ambush'&&!waterHidden){say('SUMÉRGETE ANTES DE EMBOSCAR');return}
+if(a==='ambush'&&waterHidden){waterHidden=false;attack='ambush';attackT=.62}
+else{attack=a;attackT=.38}
+let reach=a==='ambush'?52:a==='tail'?34:26,hit=0;
+for(const r of rats){let dx=r.x-p.x,dz=r.z-p.z;if(Math.hypot(dx,dz)<reach&&((a!=='bite'&&a!=='ambush')||dx*p.face> -8)){r.hp-=a==='ambush'?2:1;r.hit=.25;hit++;if(r.hp<=0)r.dead=true}}
+rats=rats.filter(r=>!r.dead);kills=8-rats.length;count.textContent='RATAS '+kills+'/8';if(hit)say(a==='ambush'?'¡EMBOSCADA DESDE EL AGUA!':a==='bite'?'¡ÑAC!':'¡GOLPE!');else say('¡ACÉRCATE A LAS RATAS!');if(kills===8){running=false;start.hidden=false;start.textContent='OTRA PARTIDA';say('¡ALCANTARILLA DESPEJADA!')}}
+document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();doAttack(b.dataset.act)}));
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space')doAttack('bite');if(e.code==='KeyJ')doAttack('tail')});addEventListener('keyup',e=>keys[e.code]=false);
+const stick=$('stick'),nub=$('nub');function moveJoy(e){let r=stick.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2),m=Math.max(1,Math.hypot(x,y));joy.x=x/m;joy.y=y/m;nub.style.transform='translate('+joy.x*28+'px,'+joy.y*28+'px)'}
+stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);moveJoy(e)});stick.addEventListener('pointermove',e=>{if(pointer===e.pointerId)moveJoy(e)});function release(e){if(pointer===e.pointerId){pointer=null;joy={x:0,y:0};nub.style.transform=''}}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
+function update(dt){t+=dt;if(toast>0){toast-=dt;if(toast<=0)msg.textContent=''}if(!running)return;attackT=Math.max(0,attackT-dt);inv=Math.max(0,inv-dt);
+let dx=joy.x+(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0),dz=joy.y+(keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0),m=Math.hypot(dx,dz);if(m>1){dx/=m;dz/=m}p.x=clamp(p.x+dx*70*dt,22,298);p.z=clamp(p.z+dz*58*dt,28,143);if(dx)p.face=Math.sign(dx);p.walk+=m*dt*12;
+let inWater=p.z>111;p.h=inWater?Math.max(0,p.h):p.h;waterHidden=waterHidden&&inWater;status.textContent=waterHidden?'OCULTO BAJO EL AGUA':inWater?'EN EL AGUA':'SECO';
+for(const r of rats){r.phase+=dt*8;r.cool-=dt;r.hit=Math.max(0,r.hit-dt);let ax=p.x-r.x,az=p.z-r.z,d=Math.hypot(ax,az)||1;if(d<100&&!waterHidden){r.x+=ax/d*20*dt;r.z+=az/d*17*dt;if(d<17&&r.cool<0&&inv<=0){p.h-=8;inv=.6;r.cool=1.2;say('¡UNA RATA TE HA MORDIDO!')}}else if(waterHidden){r.x+=Math.sin(r.phase)*dt*5;r.z+=Math.cos(r.phase)*dt*3}}
+hp.style.width=clamp(p.h,0,100)+'%';if(p.h<=0){running=false;start.hidden=false;start.textContent='REINTENTAR';say('¡TE HAN VENCIDO!')}}
+function polygon(points,color){g.fillStyle=color;g.beginPath();g.moveTo(...points[0]);for(let i=1;i<points.length;i++)g.lineTo(...points[i]);g.closePath();g.fill()}
+function background(){g.fillStyle='#172421';g.fillRect(0,0,W,H);
+// back wall and arched tunnel
+g.fillStyle='#394b40';g.fillRect(0,0,W,82);g.fillStyle='#71806a';g.beginPath();g.moveTo(0,0);g.lineTo(0,58);g.quadraticCurveTo(160,-45,320,58);g.lineTo(320,0);g.fill();
+for(let x=0;x<320;x+=32){g.fillStyle='#52634e';g.fillRect(x,27+(x%3)*3,22,4);g.fillStyle='#293a32';g.fillRect(x+5,34,3,3)}
+// perspective floor trapezoid with tiled stones
+polygon([[0,72],[320,72],[320,180],[0,180]],'#4b5542');
+for(let row=0;row<6;row++){let y=77+row*18,wide=18+row*8;g.strokeStyle='#69715a';g.lineWidth=1;g.beginPath();g.moveTo(0,y);g.lineTo(320,y);g.stroke();for(let x=-40;x<360;x+=wide){g.strokeStyle='#3a493a';g.beginPath();g.moveTo(160+(x-160)*(0.35+row*.13),y);g.lineTo(160+(x-160)*(0.35+row*.13),y+17);g.stroke()}}
+ // water pool at foreground, clear shoreline
+polygon([[0,123],[45,112],[112,119],[180,108],[252,117],[320,107],[320,180],[0,180]],'#205c61');
+for(let i=0;i<24;i++){let x=(i*47+t*(12+i%3*9))%340,y=126+(i*13)%48;g.fillStyle=i%3?'#4b9990':'#8bc2a1';g.fillRect(x,y,7+i%5,1)}
+for(let i=0;i<7;i++){let x=i*49+Math.sin(t*1.8+i)*3;g.fillStyle='#477344';g.fillRect(x,111,3,17);g.fillRect(x-4,114,5,3)}
+// sewer pipes
+g.fillStyle='#202e29';g.fillRect(0,67,320,7);g.fillStyle='#89917a';g.fillRect(0,67,320,2);for(let x=15;x<320;x+=58){g.fillStyle='#7c806a';g.fillRect(x,60,5,17)}
+}
+function drawPlayer(){let scale=1+p.z/330,x=p.x-8*scale,y=p.z-14*scale;if(waterHidden){g.fillStyle='#7fc0ae';g.fillRect(p.x-13,y+7,25,2);g.fillRect(p.x-8,y+11,17,1);return}
+g.save();g.translate(p.x,p.z);g.scale(scale,scale);if(p.face<0)g.scale(-1,1);
+let bob=Math.abs(Math.sin(p.walk))*2;g.fillStyle='#15231a';g.fillRect(-15,5,32,4);
+sprite(croc,-15,-15-bob,2,green);
+ // eye and articulated jaw, visibly opens during bite
+g.fillStyle='#e5d65b';g.fillRect(12,-10-bob,4,3);g.fillStyle='#111';g.fillRect(14,-10-bob,2,2);
+if(attack==='bite'&&attackT>0){let open=Math.sin((1-attackT/.38)*Math.PI)*8;g.fillStyle='#347b35';g.fillRect(10,-3+open,20,4);g.fillStyle='#fff0c5';g.fillRect(15,1+open,3,3);g.fillRect(22,1+open,3,3)}
+if(attack==='tail'&&attackT>0){g.fillStyle='#b7d46a';g.fillRect(-38,-2,22,3)}
+if(attack==='ambush'&&attackT>0){g.fillStyle='#d6e98c';g.fillRect(-20,-20,45,2);g.fillRect(-25,-16,55,2)}
+g.restore()}
+function drawRat(r){let s=.75+r.z/260,x=r.x,y=r.z-8*s;g.save();g.translate(x,y);if(r.hit>0)g.globalAlpha=.5;sprite(rat,-6*s,-6*s,1.4*s,rp);g.fillStyle='#d98d82';g.fillRect(-12*s,1*s,7*s,1);g.fillStyle='#edc46b';g.fillRect(4*s,-5*s,2*s,2*s);g.restore()}
+function render(){g.save();g.setTransform(c.width/W,0,0,c.height/H,0,0);g.imageSmoothingEnabled=false;background();let order=rats.map(r=>({z:r.z,draw:()=>drawRat(r)}));if(running||p)order.push({z:p.z,draw:drawPlayer});order.sort((a,b)=>a.z-b.z).forEach(o=>o.draw());if(waterHidden){g.fillStyle='#78c7b8';g.globalAlpha=.25;g.fillRect(0,108,320,72);g.globalAlpha=1}let vg=g.createRadialGradient(160,85,45,160,85,190);vg.addColorStop(0,'#0000');vg.addColorStop(1,'#07110c99');g.fillStyle=vg;g.fillRect(0,0,W,H);g.restore()}
+function loop(now){let dt=Math.min(.04,(now-last)/1000);last=now;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+})();
+</script></body></html>
