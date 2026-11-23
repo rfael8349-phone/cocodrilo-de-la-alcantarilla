@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#101a18"><title>El Cocodrilo — Alcantarilla SNES</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101713;color:#f4edc8;font-family:system-ui,sans-serif;touch-action:none}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+#hud{position:fixed;inset:0;padding:env(safe-area-inset-top) 12px 12px;pointer-events:none;text-shadow:2px 2px #10130d;font-weight:900}
+#top{display:flex;align-items:center;gap:9px;font-size:12px}#bar{width:94px;height:10px;border:1px solid #e6dfb5;background:#272e25}#hp{height:100%;width:100%;background:#a8d65c}#stage{margin-left:auto}
+#controls{position:absolute;inset:auto 14px 16px;display:flex;align-items:end;justify-content:space-between;pointer-events:none}
+#stick{width:116px;height:116px;border:3px solid #d7dfb477;border-radius:50%;background:#15251dcc;display:grid;place-items:center;pointer-events:auto}
+#nub{width:42px;height:42px;border-radius:50%;background:#dce8b8;border:2px solid white}
+#buttons{display:grid;grid-template-columns:repeat(2,76px);gap:7px;pointer-events:auto}
+button{min-height:45px;border:2px solid #dce8b8;border-radius:9px;background:#294333;color:white;font-weight:1000;font-size:10px;box-shadow:0 3px #101710}
+button:active{transform:translateY(2px)}
+#start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 26px;font-size:16px;pointer-events:auto}
+#msg{position:absolute;top:15%;left:7%;width:86%;text-align:center;color:#f6df79;font-size:16px}
+#help{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;color:#d5dfbfaa}
+@media(min-width:700px){#stick{width:132px;height:132px}#buttons{grid-template-columns:repeat(2,90px)}}
+</style></head>
+<body><canvas id="game"></canvas>
+<div id="hud"><div id="top"><div id="bar"><div id="hp"></div></div><span id="rats">RATAS 0/10</span><span id="stage">TRAMO 1 · TÚNEL</span></div>
+<div id="msg">EL COCODRILO DE LA ALCANTARILLA</div><button id="start">COMENZAR</button>
+<div id="controls"><div id="stick"><div id="nub"></div></div><div id="buttons"><button data-act="bite">MORDISCO</button><button data-act="tail">COLAZO</button><button data-act="dive">SUMERGIRSE</button><button data-act="jump">SALTO</button></div></div>
+<div id="help">Joystick: izquierda/derecha y profundidad · Atraviesa rampas y escaleras</div></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),W=384,H=216;
+let last=performance.now(),time=0,scale=1,keys={},joy={x:0,y:0},pointer=null;
+const $=id=>document.getElementById(id),hp=$('hp'),ratsUI=$('rats'),stageUI=$('stage'),msg=$('msg'),start=$('start');
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(a,b)=>a+Math.random()*(b-a);
+function resize(){const d=Math.min(devicePixelRatio||1,2);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d)}addEventListener('resize',resize);resize();
+const worldEnd=2050;
+const ramps=[{x:0,y:142},{x:280,y:142},{x:390,y:116},{x:570,y:116},{x:650,y:116},{x:735,y:142},{x:970,y:142},{x:1080,y:112},{x:1160,y:112},{x:1260,y:142},{x:1510,y:142},{x:1600,y:120},{x:1780,y:120},{x:1900,y:142},{x:2050,y:142}];
+function floorY(x){x=clamp(x,0,worldEnd);let i=0;while(i<ramps.length-2&&ramps[i+1].x<x)i++;let a=ramps[i],b=ramps[i+1];let u=clamp((x-a.x)/(b.x-a.x),0,1);return a.y+(b.y-a.y)*u}
+function waterAt(x){return x>1190&&x<1455}
+let player=null,enemies=[],camera=0,dead=false,won=false,toast=0;
+function say(s){msg.textContent=s;toast=1.8}
+function reset(){player={x:55,depth:.45,hp:100,face:1,vx:0,walk:0,jump:0,jv:0,hidden:false,attack:'',attackT:0,inv:0};camera=0;dead=false;won=false;
+enemies=Array.from({length:10},(_,i)=>({x:210+i*176+rand(-35,35),depth:rand(.22,.78),hp:2,phase:rand(0,6),cool:rand(.4,2),hit:0,alive:true}));
+ratsUI.textContent='RATAS 0/10';start.hidden=true;say('¡AVANZA! LA CÁMARA TE ACOMPAÑA');}
+start.onclick=reset;
+function attack(type){if(!player||dead||won||player.attackT>0)return;
+if(type==='dive'){if(waterAt(player.x)){player.hidden=!player.hidden;say(player.hidden?'TE OCULTAS BAJO EL AGUA':'SALES A LA SUPERFICIE')}else say('EL AGUA ESTÁ MÁS ADELANTE');return}
+if(type==='jump'){if(player.jump<=0){player.jv=-118;player.jump=1}return}
+if(player.hidden){player.hidden=false}
+player.attack=type;player.attackT=.42;let hits=0;
+for(const e of enemies){if(!e.alive)continue;let dx=e.x-player.x,dz=(e.depth-player.depth)*72,range=type==='tail'?58:43;
+if(Math.hypot(dx,dz)<range&&(type==='tail'||dx*player.face>-12)){e.hp--;e.hit=.25;hits++;if(e.hp<=0)e.alive=false}}
+const defeated=enemies.filter(e=>!e.alive).length;ratsUI.textContent='RATAS '+defeated+'/10';
+say(hits?(type==='bite'?'¡MORDISCO!':'¡COLAZO!'):'¡ACÉRCATE A LAS RATAS!');
+if(defeated===10){won=true;start.hidden=false;start.textContent='VOLVER A JUGAR';say('¡ALCANTARILLA DESPEJADA!')}}
+document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();attack(b.dataset.act)}));
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space')attack('bite');if(e.code==='KeyJ')attack('tail')});
+addEventListener('keyup',e=>keys[e.code]=false);
+const stick=$('stick'),nub=$('nub');
+function moveJoy(e){const r=stick.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2),m=Math.max(1,Math.hypot(x,y));joy.x=x/m;joy.y=y/m;nub.style.transform='translate('+joy.x*28+'px,'+joy.y*28+'px)'}
+stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);moveJoy(e)});
+stick.addEventListener('pointermove',e=>{if(pointer===e.pointerId)moveJoy(e)});
+function release(e){if(pointer===e.pointerId){pointer=null;joy={x:0,y:0};nub.style.transform=''}}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
+function update(dt){time+=dt;if(toast>0){toast-=dt;if(toast<=0)msg.textContent=''}if(!player||dead||won)return;
+const p=player;let dx=joy.x+(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0),dz=joy.y+(keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0),m=Math.hypot(dx,dz);if(m>1){dx/=m;dz/=m}
+p.vx=dx*88;p.x=clamp(p.x+p.vx*dt,18,worldEnd-30);p.depth=clamp(p.depth+dz*dt*.95,.08,.9);if(dx)p.face=Math.sign(dx);p.walk+=Math.hypot(dx,dz)*dt*12;
+if(p.jump>0){p.jv+=290*dt;p.jump+=p.jv*dt;if(p.jump>=0){p.jump=0;p.jv=0}}
+p.attackT=Math.max(0,p.attackT-dt);p.inv=Math.max(0,p.inv-dt);
+if(!waterAt(p.x))p.hidden=false;
+for(const e of enemies){if(!e.alive)continue;e.phase+=dt*7;e.cool-=dt;e.hit=Math.max(0,e.hit-dt);
+let ex=p.x-e.x,ez=(p.depth-e.depth)*72,d=Math.hypot(ex,ez)||1;
+if(d<110&&!p.hidden){e.x+=ex/d*24*dt;e.depth=clamp(e.depth+ez/d*dt*.27,.08,.9);if(d<20&&e.cool<=0&&p.inv<=0){p.hp-=9;p.inv=.65;e.cool=1.3;say('¡UNA RATA TE HA MORDIDO!')}}
+else if(p.hidden){e.x+=Math.sin(e.phase)*dt*7}}
+camera=clamp(p.x-135,0,worldEnd-W+20);
+hp.style.width=clamp(p.hp,0,100)+'%';
+if(p.hp<=0){dead=true;start.hidden=false;start.textContent='REINTENTAR';say('¡TE HAN VENCIDO!')}}
+function rect(x,y,w,h,col){ctx.fillStyle=col;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function poly(points,col){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(...points[0]);for(let i=1;i<points.length;i++)ctx.lineTo(...points[i]);ctx.closePath();ctx.fill()}
+function bg(){rect(0,0,W,H,'#17241f');
+// back wall with parallax arch and brickwork
+ctx.save();ctx.translate(-camera*.22,0);rect(0,0,worldEnd+500,126,'#35473d');
+for(let x=-40;x<worldEnd+500;x+=68){rect(x,23,58,3,'#52634e');rect(x+12,41,46,3,'#283a32');rect(x+2,59,54,3,'#52634e')}
+for(let x=-20;x<worldEnd+500;x+=230){rect(x,0,10,94,'#202f29');rect(x+10,0,5,94,'#6c7965')}
+ctx.restore();
+// distant tunnel lights
+ctx.save();ctx.translate(-camera*.43,0);for(let x=100;x<worldEnd+500;x+=360){rect(x,40,28,5,'#d3bd70');rect(x+5,45,18,20,'#b4a35f22')}ctx.restore();
+// walkable floor polygon following height profile
+let pts=[[0,216]];for(let x=0;x<=W+16;x+=16)pts.push([x,floorY(camera+x)]);pts.push([W,216]);poly(pts,'#4a5545');
+ctx.save();ctx.beginPath();ctx.moveTo(0,floorY(camera));for(let x=8;x<=W;x+=8)ctx.lineTo(x,floorY(camera+x));ctx.lineTo(W,216);ctx.lineTo(0,216);ctx.closePath();ctx.clip();
+for(let x=Math.floor(camera/36)*36;x<camera+W+36;x+=36){let sx=x-camera;let fy=floorY(x);rect(sx,fy+7,32,3,'#66705a');rect(sx+15,fy+14,2,Math.max(0,216-fy-14),'#354439')}
+for(let x=Math.floor(camera/17)*17;x<camera+W;x+=17){let sx=x-camera;rect(sx,175+(x%5),2,2,'#7d8060')}
+ctx.restore();
+// raised side platforms and stairs
+for(let i=0;i<ramps.length-1;i++){let a=ramps[i],b=ramps[i+1],sx=a.x-camera,ex=b.x-camera;if(ex<0||sx>W)continue;
+if((i===1||i===5||i===9||i===13)){rect(sx,a.y-7,Math.max(0,ex-sx),7,'#65715a');rect(sx,a.y-2,Math.max(0,ex-sx),2,'#a2a078')}}
+if(waterAt(camera+W/2)|| (camera<1455&&camera+W>1190)){let l=1190-camera,r=1455-camera;poly([[Math.max(0,l),floorY(1190)+2],[Math.min(W,r),floorY(1455)+2],[Math.min(W,r),216],[Math.max(0,l),216]],'#205b63');
+for(let i=0;i<18;i++){let x=(i*43+time*(12+i%3*8))%W,y=168+(i*13)%42;rect(x,y,8,1,i%2?'#73b4a2':'#b0c7a0')}}
+}
+// pipes in foreground/back layers
+ctx.save();ctx.translate(-camera*.7,0);for(let x=0;x<worldEnd+400;x+=290){rect(x,91,130,8,'#202e29');rect(x,91,130,2,'#87917b');rect(x+12,86,5,17,'#7c806a');rect(x+108,86,5,17,'#7c806a')}ctx.restore();
+}
+function drawCroc(p){let x=p.x-camera,y=floorY(p.x)+p.depth*31-p.jump;let s=1.25+p.depth*.2;ctx.save();ctx.translate(Math.round(x),Math.round(y));if(p.face<0)ctx.scale(-1,1);ctx.scale(s,s);
+if(p.hidden){rect(-17,-3,35,2,'#8bc9b3');rect(-10,-7,20,1,'#c3d8ae');ctx.restore();return}
+const bob=Math.abs(Math.sin(p.walk))*2;
+rect(-18,1,35,4,'#1b261d');
+// tail and back scales
+poly([[-14,-9],[-29,-6],[-38,-2],[-27,1],[-14,-2]],'#286b36');rect(-29,-5,10,2,'#62a64c');
+rect(-15,-14-bob,23,12,'#348a43');rect(-12,-17-bob,17,5,'#4aa14a');rect(-8,-19-bob,10,3,'#62ad4f');
+for(let i=0;i<5;i++){rect(-11+i*5,-17-bob,2,2,'#a1c45b');rect(-9+i*5,-7-bob,2,2,'#205b32')}
+rect(5,-15-bob,16,8,'#469c45');rect(12,-12-bob,16,6,'#63ad4d');rect(22,-10-bob,11,4,'#7dbb58');rect(28,-9-bob,7,3,'#a2c66b');
+rect(15,-16-bob,4,4,'#e7d75e');rect(17,-16-bob,2,3,'#151a12');
+rect(25,-6-bob,7,2,'#233d25');rect(24,-4-bob,2,2,'#f2e9c8');rect(30,-5-bob,2,2,'#f2e9c8');
+rect(-8,-2,6,6,'#276b36');rect(5,-2,7,6,'#276b36');rect(-9,3,8,2,'#18271c');rect(4,3,9,2,'#18271c');
+if(p.attackT>0&&p.attack==='bite'){let a=Math.sin((1-p.attackT/.42)*Math.PI)*7;rect(21,-5+a,16,3,'#4b9942');rect(24,-2+a,2,3,'#fff0c5');rect(31,-2+a,2,3,'#fff0c5')}
+if(p.attackT>0&&p.attack==='tail'){rect(-42,-5,21,4,'#6aa64c');rect(-44,-4,7,3,'#a6c85c')}
+if(p.inv>0&&Math.floor(time*18)%2===0)rect(-22,-23,58,2,'#fff4b0');
+ctx.restore()}
+function drawRat(e){let x=e.x-camera,y=floorY(e.x)+e.depth*31;let s=.85+e.depth*.2;ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);if(e.hit>0)ctx.globalAlpha=.45;
+rect(-8,-8,15,7,'#65574d');rect(-5,-12,11,6,'#79675a');rect(-3,-15,4,4,'#a47770');rect(5,-14,4,4,'#a47770');rect(7,-9,8,3,'#927b65');rect(12,-8,4,2,'#c39b76');rect(1,-10,2,2,'#f0c96b');rect(-6,-1,4,3,'#443d35');rect(3,-1,4,3,'#443d35');rect(-12,-4,5,1,'#b77b70');ctx.restore()}
+function draw(){ctx.save();ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.imageSmoothingEnabled=false;bg();
+const list=enemies.filter(e=>e.alive).map(e=>({y:floorY(e.x)+e.depth*31,fn:()=>drawRat(e)}));if(player)list.push({y:floorY(player.x)+player.depth*31,fn:()=>drawCroc(player)});list.sort((a,b)=>a.y-b.y).forEach(o=>o.fn());
+let grad=ctx.createRadialGradient(W/2,100,45,W/2,100,220);grad.addColorStop(0,'#0000');grad.addColorStop(1,'#07110c99');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+ctx.restore()}
+function loop(now){let dt=Math.min(.04,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+})();
+</script></body></html>
