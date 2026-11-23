@@ -90,7 +90,8 @@ for(let x=Math.floor(camera/17)*17;x<camera+W;x+=17){let sx=x-camera;rect(sx,175
 ctx.restore();
 // raised side platforms and stairs
 for(let i=0;i<ramps.length-1;i++){let a=ramps[i],b=ramps[i+1],sx=a.x-camera,ex=b.x-camera;if(ex<0||sx>W)continue;
-if((i===1||i===5||i===9||i===13)){rect(sx,a.y-7,Math.max(0,ex-sx),7,'#65715a');rect(sx,a.y-2,Math.max(0,ex-sx),2,'#a2a078')}}\nfor(let k=0;k<5;k++){let sx=650+k*17-camera,sy=116+k*5.2;if(sx<W&&sx+18>0){rect(sx,sy,18,5,'#758067');rect(sx,sy,18,1,'#c0b58a')}}for(let k=0;k<6;k++){let sx=1510+k*15-camera,sy=142-k*3.7;if(sx<W&&sx+16>0){rect(sx,sy,16,4,'#758067');rect(sx,sy,16,1,'#c0b58a')}}
+if((i===1||i===5||i===9||i===13)){rect(sx,a.y-7,Math.max(0,ex-sx),7,'#65715a');rect(sx,a.y-2,Math.max(0,ex-sx),2,'#a2a078')}}
+for(let k=0;k<5;k++){let sx=650+k*17-camera,sy=116+k*5.2;if(sx<W&&sx+18>0){rect(sx,sy,18,5,'#758067');rect(sx,sy,18,1,'#c0b58a')}}for(let k=0;k<6;k++){let sx=1510+k*15-camera,sy=142-k*3.7;if(sx<W&&sx+16>0){rect(sx,sy,16,4,'#758067');rect(sx,sy,16,1,'#c0b58a')}}
 if(waterAt(camera+W/2)|| (camera<1455&&camera+W>1190)){let l=1190-camera,r=1455-camera;poly([[Math.max(0,l),floorY(1190)+2],[Math.min(W,r),floorY(1455)+2],[Math.min(W,r),216],[Math.max(0,l),216]],'#205b63');
 for(let i=0;i<18;i++){let x=(i*43+time*(12+i%3*8))%W,y=168+(i*13)%42;rect(x,y,8,1,i%2?'#73b4a2':'#b0c7a0')}}
 }
